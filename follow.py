@@ -7,6 +7,7 @@ import logging
 from watchdog.observers import Observer  #creating an instance of the watchdog.observers.Observer from watchdogs class.
 from watchdog.events import LoggingEventHandler  #implementing a subclass of watchdog.events.FileSystemEventHandler which is LoggingEventHandler in our case
 from watchdog.events import FileModifiedEvent
+import subprocess
 
 update_events = 0
 update_list = list()
@@ -76,6 +77,15 @@ location_is_dir = False
  
 # Bool true if execution item is provided by user
 execution_provided = False if args.exec == None else True
+
+exec_list = list()
+if execution_provided == True:
+    if os.path.isfile(args.exec):
+        exec_file = open(args.exec)
+        for line in exec_file:
+            exec_list.append(line.strip())
+else:
+    exec_list.append(args.exec)
  
 print("Location: " , args.location)
 # Check if location path exists 
@@ -99,7 +109,7 @@ if execution_provided == True:
     else:
         event_handler = FileEvent(args.location)
 else:
-    event_handler = LoggingEventHandler()
+    event_handler = LoggingEventHandler() 
 observer = Observer()
 observer.schedule(event_handler, args.location, recursive=True)  #Scheduling monitoring of a path with the observer instance and event handler. There is 'recursive=True' because only with it enabled, watchdog.observers.Observer can monitor sub-directories
 observer.start()  #for starting the observer thread
@@ -109,8 +119,11 @@ try:
         time.sleep(args.timing)
         if execution_provided == True and update_events != 0:
             print("exec")
-            print(update_events)
-            print(update_list)
+            print(os.popen(args.exec).read())
+            for command in exec_list:
+                process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+                process.wait()
+                print(process.returncode)
             update_events = 0
             update_list = list()
         else:
