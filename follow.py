@@ -33,11 +33,11 @@ args = parser.parse_args()
 def log(log_string, log_type='log'):
     '''Logging function, logs to stdout. Valid log types are 'log', 'error', and 'verbose' '''
     if log_type == 'error':
-        print(datetime.now() , " ERROR: " , log_string)
-    elif args.verbose == True:
-        print(datetime.now() , " VERBOSE: " , log_string)
+        print("[" , os.getpid() , "] " , " ERROR: " , datetime.now() , log_string)
+    elif args.verbose == True and (log_type == 'log' or log_type == 'verbose'):
+        print("[" , os.getpid() , "] " , " VERBOSE: " , log_string)
     elif log_type == 'log':
-        print(log_string)
+        print("[" , os.getpid() , "] " , log_string)
 
 # Globals holding list of changes and amount of change events
 update_events = 0
@@ -148,9 +148,11 @@ try:
         elif execution_provided == True and update_events != 0:
             # Loop through commands and run them, waiting for return before running the next command
             for command in exec_list:
+                # Start subprocess for command in list
                 process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                log("Running command '" + str(command) + "', pid: " + str(process.pid), 'verbose')
                 process.wait()
-                log("Command output:\n " + process.stdout.read().decode('utf-8'))
+                log("Command output:\n " + process.stdout.read().decode('utf-8')) 
                 log("Ran command: '" + str(command) + "' with return value of: " + str(process.returncode))
             # Reset the update events variables for next check
             update_events = 0
