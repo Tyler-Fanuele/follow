@@ -123,7 +123,7 @@ if execution_provided == True:
 else:
     event_handler = LoggingEventHandler() 
 
-log("Starting follow process\n:")
+log("Starting follow process:\n")
 log(args.location + " is a valid directory" if location_is_dir else args.location + " is a valid file")
 log("Commands to run when update is registered:")
 for command in exec_list:
@@ -139,15 +139,16 @@ try:
         if execution_provided == True and update_events != 0:
             # Loop through commands and run them, waiting for return before running the next command
             for command in exec_list:
-                process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+                process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 process.wait()
+                log("Command output:\n " + process.stdout.read().decode('utf-8'))
                 log("Ran command: '" + str(command) + "' with return value of: " + str(process.returncode))
             # Reset the update events variables for next check
             update_events = 0
-            update_list = list()
+            update_list = list() 
         else:
-            log("No updates detected, no execution of command", 'verbose')
+            log("No updates detected, no execution of command", 'verbose') 
         
 except KeyboardInterrupt:
-    observer.stop() 
-observer.join()  
+    observer.stop()
+observer.join()
