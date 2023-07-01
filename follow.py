@@ -8,7 +8,24 @@ from watchdog.observers import Observer  #creating an instance of the watchdog.o
 from watchdog.events import LoggingEventHandler  #implementing a subclass of watchdog.events.FileSystemEventHandler which is LoggingEventHandler in our case
 from watchdog.events import FileModifiedEvent
 
+update_events = 0
+update_list = list()
 
+class FileEvent(FileModifiedEvent):
+    def dispatch(self, event):
+        if event.is_directory == False and event.event_type  == 'modified':
+            #print(event)
+            global update_events, update_list
+            update_events = update_events + 1
+            update_list.append(event)
+
+class DirEvent(FileModifiedEvent):
+    def dispatch(self, event):
+        if event.src_path not in ignore_list:
+            #print(event)
+            global update_events, update_list
+            update_events = update_events + 1
+            update_list.append(event)
 
 # List of absolute paths that will be ignored by the program
 ignore_list = list()
@@ -31,26 +48,9 @@ if os.path.isfile(os.path.join(os.path.curdir , ".followignore")):
                     additional_ignored.append(os.path.abspath(os.path.join(dirpath, file)))
     ignore_list = ignore_list + additional_ignored
                     
-print("Ignore List: ", ignore_list)
+#print("Ignore List: ", ignore_list)
 
-update_events = 0
-update_list = list()
 
-class FileEvent(FileModifiedEvent):
-    def dispatch(self, event):
-        if event.is_directory == False and event.event_type  == 'modified':
-            #print(event)
-            global update_events, update_list
-            update_events = update_events + 1
-            update_list.append(event)
-
-class DirEvent(FileModifiedEvent):
-    def dispatch(self, event):
-        if event.src_path not in ignore_list:
-            #print(event)
-            global update_events, update_list
-            update_events = update_events + 1
-            update_list.append(event)
 
 # Create argument parser object 
 parser = argparse.ArgumentParser(
@@ -63,17 +63,21 @@ parser.add_argument('location', help="The location to be followed, can be dir or
 
 # Add exec argument to specify what command of file containing multiple commands to be executed during execution period
 parser.add_argument('-e', '--exec', nargs='?', help="The commands or command to be executed. Can be string, path to file, or nothing. Nothing will default to printing changes")
+
+# Add timing argument to specify how long to wait to check if command execution is needed, default is 20
+parser.add_argument('-t', '--timing', nargs='?', default=20, type=float, help="Time in between checking for execution, default 20 seconds")
  
 # Parse the arguments
 args = parser.parse_args() 
+print(args)
 
 # Bool true if location specified is dir
 location_is_dir = False 
  
 # Bool true if execution item is provided by user
 execution_provided = False if args.exec == None else True
-print("Execution: " , execution_provided)
  
+print("Location: " , args.location)
 # Check if location path exists 
 if os.path.exists(args.location):
     print(args.location , " exists") 
@@ -102,11 +106,13 @@ observer.start()  #for starting the observer thread
 print("Keyboard interrupt to end program")
 try:
     while True: 
-        time.sleep(20)
+        time.sleep(args.timing)
         if execution_provided == True and update_events != 0:
             print("exec")
             print(update_events)
             print(update_list)
+            update_events = 0
+            update_list = list()
         else:
             print("dont exec")
         
