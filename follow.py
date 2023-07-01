@@ -119,7 +119,6 @@ try:
         time.sleep(args.timing)
         if execution_provided == True and update_events != 0:
             print("exec")
-            print(os.popen(args.exec).read())
             for command in exec_list:
                 process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
                 process.wait()
@@ -127,7 +126,7 @@ try:
             update_events = 0
             update_list = list()
         else:
-            print("dont exec")
+            print("dont exec") 
         
 except KeyboardInterrupt:
     observer.stop()
