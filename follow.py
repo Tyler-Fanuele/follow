@@ -141,13 +141,11 @@ try:
         
         # If file or directory is deleted or removed from computer, cleanup and end program
         if os.path.exists(os.path.abspath(args.location)) == False:
-            observer.stop()
-            observer.join()
             log("Path: " + os.path.abspath(args.location) + " does not exist anymore", 'error')
-            exit(1)    
+            break;
         
         # If a execution file or string was provided and there was a update event
-        if execution_provided == True and update_events != 0:
+        elif execution_provided == True and update_events != 0:
             # Loop through commands and run them, waiting for return before running the next command
             for command in exec_list:
                 process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -161,5 +159,6 @@ try:
             log("No updates detected, no execution of command", 'verbose') 
         
 except KeyboardInterrupt:
-    observer.stop()
+    log("Keyboard interrupt, exiting program")
+observer.stop()
 observer.join()
