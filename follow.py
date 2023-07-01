@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 import argparse
 import os
-import sys
 import time
 import logging
 from watchdog.observers import Observer  #creating an instance of the watchdog.observers.Observer from watchdogs class.
@@ -20,10 +19,10 @@ parser = argparse.ArgumentParser(
 parser.add_argument('location', help="The location to be followed, can be dir or file", nargs='?', default=os.getcwd())
 
 # Add exec argument to specify what command of file containing multiple commands to be executed during execution period
-parser.add_argument('-e', '--exec', nargs='?', help="The commands or command to be executed. Can be string, path to file, or nothing. Nothing will default to printing changes")
+parser.add_argument('--commands', nargs='?', help="The command or file containing commands to be executed. Can be string, path to file, or nothing. Nothing will default to printing changes")
 
 # Add timing argument to specify how long to wait to check if command execution is needed, default is 20
-parser.add_argument('-t', '--timing', nargs='?', default=20, type=float, help="Time in between checking for execution, default 20 seconds")
+parser.add_argument('--timing', nargs='?', default=10, type=float, help="Time in between checking for execution, default 10 seconds")
 
 parser.add_argument('--verbose', action='store_true', default=False, help="Sets flag enabling verbose")
  
@@ -35,14 +34,12 @@ def log(log_string, log_type='log'):
     '''Logging function, logs to stdout. Valid log types are 'log', 'error', and 'verbose' '''
     if log_type == 'error':
         print(datetime.now() , " ERROR: " , log_string)
-    elif log_type == 'verbose' and args.verbose == True:
+    elif args.verbose == True:
         print(datetime.now() , " VERBOSE: " , log_string)
     elif log_type == 'log':
         print(log_string)
 
-
-
-
+# Globals holding list of changes and amount of change events
 update_events = 0
 update_list = list()
 
@@ -87,20 +84,20 @@ if os.path.isfile(os.path.join(os.path.curdir , ".followignore")):
 location_is_dir = False 
  
 # Bool true if execution item is provided by user
-execution_provided = False if args.exec == None else True
+execution_provided = False if args.commands == None else True
 
 exec_list = list()
 if execution_provided == True:
-    if os.path.isfile(args.exec):
-        exec_file = open(args.exec)
+    if os.path.isfile(args.commands):
+        exec_file = open(args.commands)
         for line in exec_file:
             exec_list.append(line.strip())
     else:
-        exec_list.append(args.exec)
+        exec_list.append(args.commands)
 
-log("Command List: " + str(exec_list), 'verbose')
+log("Command List: \n   " + str(exec_list), 'verbose')
 
-log("Follow Location: " + args.location, "verbose")
+log("Follow Location: \n    " + args.location, "verbose")
 # Check if location path exists 
 if os.path.exists(args.location): 
     log(args.location + " exists", 'verbose') 
@@ -109,7 +106,7 @@ if os.path.exists(args.location):
         location_is_dir = True
 else:
     # If location path doesn't exist terminate program
-    log("Location:'" + args.location + "' does not exist, exiting program", 'error')
+    log("Location path:'" + args.location + "' does not exist, exiting program", 'error')
     exit(1)
 
 
@@ -126,16 +123,19 @@ else:
     event_handler = LoggingEventHandler() 
 
 log("Starting follow process:\n")
-log(args.location + " is a valid directory" if location_is_dir else args.location + " is a valid file")
-log("Commands to run when update is registered:")
-for command in exec_list:
-    log("   " + str(command))
+log("Path: '" + args.location + "' is a valid directory" if location_is_dir else "Path: '" +  args.location + "' is a valid file")
+if args.commands is not None:
+    log("Commands to run when update is registered:")
+    for command in exec_list:
+        log("   " + str(command))
+else:
+    log("No commands were given, defaulting to printing changes!")
 observer = Observer()
 observer.schedule(event_handler, args.location, recursive=True)  #Scheduling monitoring of a path with the observer instance and event handler. There is 'recursive=True' because only with it enabled, watchdog.observers.Observer can monitor sub-directories
 observer.start()  #for starting the observer thread
 log("Use keyboard interrupt to exit program")
 try:
-    while True: 
+    while True:
         # Wait to check if update is needed
         time.sleep(args.timing)
         
