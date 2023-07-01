@@ -32,7 +32,7 @@ args = parser.parse_args()
 
 
 def log(log_string, log_type='log'):
-    '''Logging function, logs to stdout. Valid log types are 'log', 'error', and 'verbose''''
+    '''Logging function, logs to stdout. Valid log types are 'log', 'error', and 'verbose' '''
     if log_type == 'error':
         print(datetime.now() , " ERROR: " , log_string)
     elif log_type == 'verbose' and args.verbose == True:
@@ -136,7 +136,16 @@ observer.start()  #for starting the observer thread
 log("Use keyboard interrupt to exit program")
 try:
     while True: 
+        # Wait to check if update is needed
         time.sleep(args.timing)
+        
+        # If file or directory is deleted or removed from computer, cleanup and end program
+        if os.path.exists(os.path.abspath(args.location)) == False:
+            observer.stop()
+            observer.join()
+            log("Path: " + os.path.abspath(args.location) + " does not exist anymore", 'error')
+            exit(1)    
+        
         # If a execution file or string was provided and there was a update event
         if execution_provided == True and update_events != 0:
             # Loop through commands and run them, waiting for return before running the next command
