@@ -30,7 +30,9 @@ parser.add_argument('--verbose', action='store_true', default=False, help="Sets 
 # Parse the arguments
 args = parser.parse_args()  
 
+
 def log(log_string, log_type='log'):
+    '''Logging function, logs to stdout. Valid log types are 'log', 'error', and 'verbose''''
     if log_type == 'error':
         print(datetime.now() , " ERROR: " , log_string)
     elif log_type == 'verbose' and args.verbose == True:
