@@ -130,19 +130,24 @@ if args.commands is not None:
         log("   " + str(command))
 else:
     log("No commands were given, defaulting to printing changes!")
-observer = Observer()
-observer.schedule(event_handler, args.location, recursive=True)  #Scheduling monitoring of a path with the observer instance and event handler. There is 'recursive=True' because only with it enabled, watchdog.observers.Observer can monitor sub-directories
-observer.start()  #for starting the observer thread
+
 log("Use keyboard interrupt to exit program")
 try:
     while True:
+        observer = Observer()
+        observer.schedule(event_handler, args.location, recursive=True)  #Scheduling monitoring of a path with the observer instance and event handler. There is 'recursive=True' because only with it enabled, watchdog.observers.Observer can monitor sub-directories
+        observer.start()  #for starting the observer thread
         # Wait to check if update is needed
         time.sleep(args.timing)
         
         # If file or directory is deleted or removed from computer, cleanup and end program
         if os.path.exists(os.path.abspath(args.location)) == False:
-            log("Path: " + os.path.abspath(args.location) + " does not exist anymore", 'error')
-            break;
+            log("Path: " + os.path.abspath(args.location) + " does not exist anymore, waiting for reconnect")
+            while os.path.exists(os.path.abspath(args.location)) == False:
+                time.sleep(.1) 
+            log("Path: "  + os.path.abspath(args.location) + " reconnected!")
+            observer.schedule(event_handler, args.location, recursive=True)  #Scheduling monitoring of a path with the observer instance and event handler. There is 'recursive=True' because only with it enabled, watchdog.observers.Observer can monitor sub-directories
+            continue
         
         # If a execution file or string was provided and there was a update event
         elif execution_provided == True and update_events != 0:
@@ -159,8 +164,9 @@ try:
             update_list = list() 
         else:
             log("No updates detected, no execution of command", 'verbose') 
-        
+        observer.stop()
+        observer.join()
 except KeyboardInterrupt:
     log("Keyboard interrupt, exiting program")
-observer.stop()
-observer.join()
+#observer.stop()
+#observer.join()
